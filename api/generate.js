@@ -7,8 +7,8 @@ export default async function handler(req, res) {
     const { prompt } = req.body;
 
     // Nembak API Google Gemini (Model 1.5 Flash - Cepet & Gratis)
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`, {
-      method: 'POST',
+     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`, {
+      method: 'PO
       headers: {
         'Content-Type': 'application/json'
       },
