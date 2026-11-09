@@ -5,31 +5,31 @@ export default async function handler(req, res) {
 
   try {
     const { prompt } = req.body;
-    
-    // Nembak API Anthropic
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+
+    // Nembak API Google Gemini (Model 1.5 Flash - Cepet & Gratis)
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01'
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'claude-3-5-sonnet-20241022',
-        max_tokens: 1024,
-        messages: [{ role: 'user', content: prompt }]
+        contents: [{
+          parts: [{ text: prompt }]
+        }]
       })
     });
 
     const data = await response.json();
     
     if (!response.ok) {
-      throw new Error(data.error?.message || 'Anthropic API Error');
+      throw new Error(data.error?.message || 'Gemini API Error');
     }
 
-    // Balikin hasil ke frontend
-    res.status(200).json({ result: data.content[0].text });
+    // Ambil teks balasan dari Gemini
+    const resultText = data.candidates[0].content.parts[0].text;
+    
+    res.status(200).json({ result: resultText });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
-}
+        }
