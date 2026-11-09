@@ -226,12 +226,12 @@ function render(){
  }
  if(page==="generator"){
   html=`<div class="section">
-   <h2>prompt generator AI (Claude)</h2>
+   <h2>prompt generator AI (Gemini)</h2>
    <label>tujuan prompt</label><input id="genGoal" placeholder="contoh: membuat website toko online">
    <label>peran AI</label><input id="genRole" placeholder="contoh: senior developer">
    <label>gaya jawaban</label><select id="genStyle"><option>profesional</option><option>detail dan terstruktur</option><option>kreatif</option><option>santai</option></select>
    <label>konteks tambahan</label><textarea id="genContext"></textarea>
-   <button class="primary" onclick="generate()">Generate Prompt (Claude)</button>
+   <button class="primary" onclick="generate()">Generate Prompt (Gemini)</button>
    <div id="generated" style="margin-top:15px"></div>
   </div>`;
  }
@@ -375,7 +375,6 @@ async function submitReview(id){
     alert("silakan login terlebih dahulu!");
     return;
   }
-
   const payload = {
     user_id: user.id,
     prompt_id: id,
@@ -388,17 +387,11 @@ async function submitReview(id){
     return;
   }
 
-  const {error} = await db
-    .from("reviews")
-    .upsert(payload, {
-      onConflict: "user_id,prompt_id"
-    });
-
+  const {error} = await db.from("reviews").upsert(payload, { onConflict: "user_id,prompt_id" });
   if(error){
     alert("gagal mengirim ulasan: " + error.message);
     return;
   }
-
   alert("ulasan berhasil dikirim!");
   location.reload();
 }
@@ -410,26 +403,22 @@ async function generate() {
   const context = $("genContext").value.trim();
   const outputDiv = $("generated");
 
-  if (!goal) {
-    return alert("Isi tujuan prompt dulu, BOS!");
-  }
-
-  outputDiv.innerHTML = '<div class="muted" style="padding:15px; border:1px solid var(--line); border-radius:10px; text-align:center;">⏳ Claude sedang meracik prompt lo...</div>';
+  if (!goal) return alert("Isi tujuan prompt dulu, BOS!");
+  
+  outputDiv.innerHTML = '<div class="muted" style="padding:15px; border:1px solid var(--line); border-radius:10px; text-align:center;">⏳ AI sedang meracik prompt lo...</div>';
 
   const promptToSend = "Tujuan: " + goal + "\nPeran AI: " + role + "\nGaya Jawaban: " + style + "\nKonteks Tambahan: " + context;
 
   try {
     const response = await fetch('/api/generate', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ prompt: promptToSend })
     });
 
     const contentType = response.headers.get("content-type");
     if (!contentType || !contentType.includes("application/json")) {
-      throw new Error("API Backend gak ketemu atau error. Pastikan folder /api/generate.js udah di-deploy!");
+      throw new Error("API Backend gak ketemu. Pastikan /api/generate.js udah di-deploy!");
     }
 
     const data = await response.json();
@@ -447,7 +436,7 @@ async function generate() {
 function copyGenerated() {
   const text = $("generated").querySelector("pre").innerText;
   navigator.clipboard.writeText(text).then(function() {
-    alert("Prompt berhasil disalin ke clipboard!");
+    alert("Prompt berhasil disalin!");
   }).catch(function() {
     alert("Gagal menyalin, salin manual aja bro.");
   });
