@@ -5,10 +5,10 @@ export default async function handler(req, res) {
 
   try {
     const { prompt } = req.body;
-
-    // Nembak API Google Gemini (Model 2.5 Flash - Update terbaru)
     const apiKey = process.env.GEMINI_API_KEY;
-    const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + apiKey;
+    
+    // Sesuai instruksi dari Google di error message lo
+    const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + apiKey;
 
     const response = await fetch(url, {
       method: 'POST',
@@ -28,11 +28,10 @@ export default async function handler(req, res) {
       throw new Error(data.error?.message || 'Gemini API Error');
     }
 
-    // Ambil teks balasan dari Gemini
     const resultText = data.candidates[0].content.parts[0].text;
     
     res.status(200).json({ result: resultText });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
-          }
+      }
