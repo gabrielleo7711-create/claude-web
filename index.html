@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Prompt Vault V3.2</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--bg:#090c14;--panel:#121827;--panel2:#1b2436;--line:#29334a;--text:#f4f5fa;--muted:#98a4ba;--accent:#927cff;--red:#ff667e;--green:#45d6a0}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,sans-serif}
+button,input,textarea,select{font:inherit}
+button{cursor:pointer}
+.hidden{display:none!important}
+input,textarea,select{width:100%;padding:12px;background:#0b101c;color:white;border:1px solid var(--line);border-radius:9px;margin:7px 0 14px}
+textarea{min-height:130px;resize:vertical}
+label{font-size:13px;color:var(--muted)}
+a{color:var(--accent)}
+#auth{min-height:100vh;display:grid;place-items:center;padding:18px}
+.authbox{width:100%;max-width:420px;background:var(--panel);padding:27px;border:1px solid var(--line);border-radius:18px}
+.logo{font-size:24px;font-weight:900;letter-spacing:-1px}
+.logo span{color:var(--accent)}
+.muted{color:var(--muted);font-size:13px}
+.primary,.secondary,.danger{padding:11px 15px;border:0;border-radius:9px;font-weight:700}
+.primary{background:var(--accent);color:white}
+.secondary{background:var(--panel2);color:white;border:1px solid var(--line)}
+.danger{background:#49202d;color:#ff9eae}
+.full{width:100%}
+#app{display:flex;min-height:100vh}
+aside{width:235px;background:#0d121e;border-right:1px solid var(--line);padding:22px 15px;flex-shrink:0}
+nav{display:grid;gap:6px;margin-top:28px}
+nav button{background:none;color:var(--muted);text-align:left;padding:12px;border-radius:9px}
+nav button.active,nav button:hover{background:var(--panel2);color:white}
+main{padding:28px;flex:1;min-width:0;max-width:1500px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:24px}
+h1{font-size:26px;margin:0 0 6px}
+h2{font-size:18px;margin:0 0 14px}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.stat,.card,.section{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:17px}
+.stat strong{display:block;font-size:27px;margin-top:8px}
+.card{display:flex;flex-direction:column;gap:10px;min-width:0}
+.card h3{margin:0;font-size:16px;overflow-wrap:anywhere}
+.card p{color:var(--muted);font-size:13px;line-height:1.5;overflow-wrap:anywhere}
+.tag{font-size:11px;background:#292443;color:#c8bcff;padding:5px 9px;border-radius:30px;width:max-content}
+.actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:auto}
+.actions button{font-size:12px}
+.toolbar{display:flex;gap:9px;margin-bottom:16px}
+.toolbar input{flex:1;margin:0}
+.toolbar select{width:auto;margin:0}
+.empty{padding:28px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:12px}
+.modal{position:fixed;inset:0;background:#000c;z-index:5;display:grid;place-items:center;padding:14px}
+.modalbox{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px;width:100%;max-width:680px;max-height:92vh;overflow:auto}
+.modalhead{display:flex;justify-content:space-between;align-items:center}
+.modalhead button{background:none;color:white;border:0;font-size:25px}
+pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#090d16;border:1px solid var(--line);padding:15px;border-radius:10px;font:13px/1.6 monospace}
+.comment{border-bottom:1px solid var(--line);padding:12px 0}
+.comment.reply{margin-left:22px;border-left:2px solid var(--accent);padding-left:12px}
+.badge{font-size:11px;color:var(--green)}
+@media(max-width:780px){
+ #app{display:block}
+ aside{width:100%;padding:13px;border:0;border-bottom:1px solid var(--line)}
+ nav{display:flex;overflow:auto;margin-top:12px}
+ nav button{white-space:nowrap;padding:10px}
+ main{padding:18px 13px}
+ .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:480px){
+ .grid{grid-template-columns:1fr}
+ .top{align-items:flex-start;flex-direction:column}
+ h1{font-size:22px}
+ .toolbar{flex-wrap:wrap}
+}
+</style>
+</head>
+<body>
+
+<section id="auth">
+ <div class="authbox">
+  <div class="logo">PROMPT<span>VAULT</span> V3.2</div>
+  <p class="muted">your AI prompt community.</p>
+  <p id="authMessage" class="muted"></p>
+  <div id="loginForm">
+   <h2>login</h2>
+   <label>email</label><input id="loginEmail" type="email">
+   <label>password</label><input id="loginPassword" type="password">
+   <button class="primary full" onclick="login()">masuk</button>
+   <p class="muted">belum punya akun? <a href="#" onclick="showRegister()">daftar</a></p>
+  </div>
+  <div id="registerForm" class="hidden">
+   <h2>daftar akun</h2>
+   <label>username</label><input id="regName">
+   <label>email</label><input id="regEmail" type="email">
+   <label>password</label><input id="regPassword" type="password">
+   <button class="primary full" onclick="register()">buat akun</button>
+   <p class="muted">sudah punya akun? <a href="#" onclick="showLogin()">login</a></p>
+  </div>
+ </div>
+</section>
+
+<div id="app" class="hidden">
+ <aside>
+  <div class="logo">PROMPT<span>VAULT</span></div>
+  <div class="muted">community edition</div>
+  <nav>
+   <button data-page="dashboard" onclick="go('dashboard',this)">◈ dashboard</button>
+   <button data-page="market" onclick="go('market',this)">⌕ marketplace</button>
+   <button data-page="mine" onclick="go('mine',this)">▤ koleksi saya</button>
+   <button data-page="favorites" onclick="go('favorites',this)">♡ favorit</button>
+   <button data-page="trending" onclick="go('trending',this)">🔥 trending</button>
+   <button data-page="generator" onclick="go('generator',this)">✧ generator</button>
+   <button data-page="profile" onclick="go('profile',this)">◎ profil</button>
+   <button data-page="admin" id="adminNav" class="hidden" onclick="go('admin',this)">⚙ admin</button>
+  </nav>
+  <p class="muted" id="sideUser" style="margin-top:25px"></p>
+  <button class="secondary full" onclick="logout()">keluar akun</button>
+ </aside>
+ <main>
+  <div class="top">
+   <div><h1 id="pageTitle">dashboard</h1><div class="muted">ruang penyimpanan prompt AI lo.</div></div>
+   <button class="primary" onclick="openCreate()">+ prompt baru</button>
+  </div>
+  <div id="content"></div>
+ </main>
+</div>
+
+<div id="modal" class="modal hidden" onclick="if(event.target.id==='modal')closeModal()">
+ <div class="modalbox">
+  <div class="modalhead"><h2 id="modalTitle">prompt</h2><button onclick="closeModal()">×</button></div>
+  <div id="modalBody"></div>
+ </div>
+</div>
+
+<script>
+const SUPABASE_URL="https://szfguepevqzlmohfghvh.supabase.co";
+const SUPABASE_ANON_KEY="sb_publishable_1_xWE_XaJqqersCI3mgCxA_xllPX_If";
+
+const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+let user=null,profile=null,prompts=[],page="dashboard";
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+function authMessage(t){$("authMessage").textContent=t}
+function showRegister(){$("loginForm").classList.add("hidden");$("registerForm").classList.remove("hidden");authMessage("")}
+function showLogin(){$("registerForm").classList.add("hidden");$("loginForm").classList.remove("hidden");authMessage("")}
+
+async function login(){
+ const {error}=await db.auth.signInWithPassword({
+  email:$("loginEmail").value.trim(),password:$("loginPassword").value
+ });
+ if(error)return authMessage(error.message);
+ await boot();
+}
+async function register(){
+ const username=$("regName").value.trim(),email=$("regEmail").value.trim(),password=$("regPassword").value;
+ if(!username||!email||password.length<6)return authMessage("isi semua kolom. password minimal 6 karakter.");
+ const {error}=await db.auth.signUp({email,password,options:{data:{username}}});
+ if(error)return authMessage(error.message);
+ authMessage("pendaftaran berhasil. cek email jika verifikasi diaktifkan.");
+}
+async function logout(){
+ await db.auth.signOut();
+ user=null;profile=null;
+ $("app").classList.add("hidden");$("auth").classList.remove("hidden");
+}
+async function boot(){
+ const {data:{session}}=await db.auth.getSession();
+ if(!session){$("auth").classList.remove("hidden");$("app").classList.add("hidden");return}
+ user=session.user;
+ const {data,error}=await db.from("profiles").select("*").eq("id",user.id).maybeSingle();
+ if(error){alert(error.message);return}
+ profile=data;
+ $("auth").classList.add("hidden");$("app").classList.remove("hidden");
+ $("sideUser").textContent=profile?.username||user.email;
+ $("adminNav").classList.toggle("hidden",profile?.role!=="admin");
+ await loadPrompts();
+ go("dashboard");
+}
+async function loadPrompts(){
+ const {data,error}=await db.from("prompts").select("*").order("created_at",{ascending:false});
+ if(error){alert("Gagal memuat prompt: "+error.message);return}
+ prompts=data||[];
+}
+function go(p,btn){
+ page=p;
+ document.querySelectorAll("nav button").forEach(x=>x.classList.remove("active"));
+ if(btn)btn.classList.add("active");
+ else document.querySelector(`[data-page="${p}"]`)?.classList.add("active");
+ const names={dashboard:"dashboard",market:"marketplace",mine:"koleksi saya",favorites:"favorit",trending:"trending prompts",generator:"prompt generator",profile:"profil",admin:"admin dashboard"};
+ $("pageTitle").textContent=names[p]||p;
+ render();
+}
+function stat(t,v){return `<div class="stat"><span class="muted">${t}</span><strong>${v}</strong></div>`}
+function card(p,extra=""){
+ return `<article class="card">
+ <span class="tag">${esc(p.category)}</span>
+ <h3>${esc(p.title)}</h3>
+ <p>${esc(p.description||"tanpa deskripsi")}</p>
+ <div class="muted">${p.is_public?"publik":"pribadi"} · ${new Date(p.created_at).toLocaleDateString("id-ID")}</div>
+ ${extra}
+ <div class="actions">
+ <button class="secondary" onclick="viewPrompt('${p.id}')">lihat</button>
+ <button class="secondary" onclick="favorite('${p.id}')">♡ favorit</button>
+ ${p.user_id===user.id?`<button class="secondary" onclick="editPrompt('${p.id}')">edit</button><button class="danger" onclick="removePrompt('${p.id}')">hapus</button>`:""}
+ </div></article>`;
+}
+function render(){
+ const own=prompts.filter(p=>p.user_id===user.id);
+ const pub=prompts.filter(p=>p.is_public);
+ let html="";
+ if(page==="dashboard"){
+  html=`<div class="grid">
+  ${stat("prompt milik lo",own.length)}
+  ${stat("prompt publik",own.filter(p=>p.is_public).length)}
+  ${stat("marketplace",pub.length)}
+  </div><br><div class="section"><h2>prompt terbaru</h2>
+  <div class="grid">${own.slice(0,6).map(card).join("")||'<div class="empty">belum ada prompt.</div>'}</div></div>`;
+ }
+ if(["market","mine","favorites","trending"].includes(page)){
+  html=`<div class="toolbar">
+   <input id="search" placeholder="cari prompt..." oninput="filterCards()">
+   <select id="category" onchange="filterCards()">
+    <option value="">semua kategori</option>
+    ${["general","writing","coding","business","design","education","marketing","image"].map(x=>`<option>${x}</option>`).join("")}
+   </select>
+  </div><div class="grid" id="promptGrid"></div>`;
+ }
+ if(page==="generator"){
+  html=`<div class="section">
+   <h2>prompt generator AI (Claude)</h2>
+   <label>tujuan prompt</label><input id="genGoal" placeholder="contoh: membuat website toko online">
+   <label>peran AI</label><input id="genRole" placeholder="contoh: senior developer">
+   <label>gaya jawaban</label><select id="genStyle"><option>profesional</option><option>detail dan terstruktur</option><option>kreatif</option><option>santai</option></select>
+   <label>konteks tambahan</label><textarea id="genContext"></textarea>
+   <button class="primary" onclick="generate()">Generate Prompt (Claude)</button>
+   <div id="generated" style="margin-top:15px"></div>
+  </div>`;
+ }
+ if(page==="profile"){
+  html=`<div class="section"><h2>profil pengguna</h2>
+  <p>username: <b>${esc(profile?.username||"-")}</b></p>
+  <p>email: ${esc(user.email)}</p><p>role: ${esc(profile?.role||"user")}</p>
+  <label>ubah username</label><input id="newUsername" value="${esc(profile?.username||"")}">
+  <button class="primary" onclick="updateProfile()">simpan profil</button>
+  </div>`;
+ }
+ if(page==="admin"){
+  if(profile?.role!=="admin")html='<div class="empty">akses ditolak.</div>';
+  else html=`<div class="grid">${stat("semua prompt",prompts.length)}${stat("prompt publik",pub.length)}${stat("laporan","moderasi di bawah")}</div>
+  <br><div class="section"><h2>laporan komunitas</h2><div id="reports">memuat laporan...</div></div>
+  <br><div class="section"><h2>moderasi prompt publik</h2><div class="grid">${pub.map(p=>`<article class="card"><h3>${esc(p.title)}</h3><button class="danger" onclick="adminDelete('${p.id}')">hapus prompt</button></article>`).join("")||"belum ada prompt."}</div></div>`;
+ }
+ $("content").innerHTML=html;
+ if(["market","mine","favorites","trending"].includes(page))filterCards();
+ if(page==="admin"&&profile?.role==="admin")loadReports();
+}
+async function filterCards(){
+ const target=$("promptGrid");if(!target)return;
+ const term=($("search")?.value||"").toLowerCase(),cat=$("category")?.value||"";
+ let list=prompts;
+ if(page==="market")list=list.filter(p=>p.is_public);
+ if(page==="mine")list=list.filter(p=>p.user_id===user.id);
+ if(page==="favorites"){
+  const {data,error}=await db.from("favorites").select("prompt_id").eq("user_id",user.id);
+  if(error){target.innerHTML=`<div class="empty">${esc(error.message)}</div>`;return}
+  const ids=(data||[]).map(x=>x.prompt_id);
+  list=list.filter(p=>ids.includes(p.id));
+ }
+ if(page==="trending"){
+  list=list.filter(p=>p.is_public);
+  const ids=list.map(p=>p.id);
+  if(ids.length){
+   const [{data:fav},{data:rev}]=await Promise.all([
+    db.from("favorites").select("prompt_id").in("prompt_id",ids),
+    db.from("reviews").select("prompt_id,rating").in("prompt_id",ids)
+   ]);
+   const scores={};
+   ids.forEach(id=>scores[id]={fav:0,count:0,sum:0});
+   (fav||[]).forEach(x=>scores[x.prompt_id].fav++);
+   (rev||[]).forEach(x=>{scores[x.prompt_id].count++;scores[x.prompt_id].sum+=x.rating});
+   list.sort((a,b)=>{
+    const x=scores[a.id],y=scores[b.id];
+    return (y.fav*2+y.count+y.sum/Math.max(1,y.count))-(x.fav*2+x.count+x.sum/Math.max(1,x.count));
+   });
+   list=list.map(p=>({...p,trendScore:scores[p.id]}));
+  }
+ }
+ list=list.filter(p=>(p.title+" "+p.description+" "+p.content).toLowerCase().includes(term));
+ if(cat)list=list.filter(p=>p.category===cat);
+ target.innerHTML=list.map(p=>card(p,page==="trending"?`<div class="muted">🔥 ${p.trendScore?.fav||0} favorit · ⭐ ${p.trendScore?.count? (p.trendScore.sum/p.trendScore.count).toFixed(1):"0"} rata-rata</div>`:"")).join("")||'<div class="empty">belum ada hasil.</div>';
+}
+function openModal(title,body){
+ $("modalTitle").textContent=title;$("modalBody").innerHTML=body;$("modal").classList.remove("hidden");
+}
+function closeModal(){$("modal").classList.add("hidden")}
+function openCreate(p=null){
+ openModal(p?"edit prompt":"buat prompt baru",`
+ <label>judul</label><input id="pTitle" value="${esc(p?.title||"")}">
+ <label>deskripsi</label><input id="pDesc" value="${esc(p?.description||"")}">
+ <label>kategori</label><select id="pCategory">${["general","writing","coding","business","design","education","marketing","image"].map(c=>`<option ${p?.category===c?"selected":""}>${c}</option>`).join("")}</select>
+ <label>isi prompt</label><textarea id="pContent">${esc(p?.content||"")}</textarea>
+ <label><input id="pPublic" type="checkbox" style="width:auto" ${p?.is_public?"checked":""}> publikasikan ke marketplace</label>
+ <button class="primary full" onclick="savePrompt('${p?.id||""}')">simpan prompt</button>`);
+}
+async function savePrompt(id){
+ const title=$("pTitle").value.trim(),content=$("pContent").value.trim();
+ if(!title||!content)return alert("judul dan isi prompt wajib diisi.");
+ const payload={user_id:user.id,title,content,description:$("pDesc").value.trim(),category:$("pCategory").value,is_public:$("pPublic").checked};
+ const result=id?await db.from("prompts").update(payload).eq("id",id).eq("user_id",user.id):await db.from("prompts").insert(payload);
+ if(result.error)return alert(result.error.message);
+ closeModal();await loadPrompts();render();
+}
+function editPrompt(id){const p=prompts.find(x=>x.id===id);if(p&&p.user_id===user.id)openCreate(p)}
+async function removePrompt(id){
+ if(!confirm("hapus prompt ini?"))return;
+ const {error}=await db.from("prompts").delete().eq("id",id).eq("user_id",user.id);
+ if(error)return alert(error.message);
+ await loadPrompts();render();
+}
+async function adminDelete(id){
+ if(profile?.role!=="admin")return;
+ if(!confirm("hapus prompt ini?"))return;
+ const {error}=await db.from("prompts").delete().eq("id",id);
+ if(error)return alert(error.message);
+ await loadPrompts();render();
+}
+async function favorite(id){
+ const {data,error}=await db.from("favorites").select("*").eq("user_id",user.id).eq("prompt_id",id).maybeSingle();
+ if(error)return alert(error.message);
+ const result=data?await db.from("favorites").delete().eq("user_id",user.id).eq("prompt_id",id):await db.from("favorites").insert({user_id:user.id,prompt_id:id});
+ if(result.error)return alert(result.error.message);
+ if(page==="favorites"||page==="trending")filterCards();
+}
+async function viewPrompt(id){
+ const p=prompts.find(x=>x.id===id);if(!p)return;
+ let reviews=[],comments=[];
+ const [{data:r,error:re},{data:c,error:ce}]=await Promise.all([
+  db.from("reviews").select("*").eq("prompt_id",id).order("created_at",{ascending:false}),
+  db.from("comments").select("*").eq("prompt_id",id).order("created_at",{ascending:true})
+ ]);
+ if(re)return alert(re.message);
+ if(ce)return alert("Komentar belum tersedia: "+ce.message);
+ reviews=r||[];comments=c||[];
+ const reviewHtml=reviews.map(x=>`<div class="comment">⭐ ${x.rating}/5 — ${esc(x.comment||"")}</div>`).join("")||'<p class="muted">belum ada ulasan.</p>';
+ const commentHtml=comments.filter(x=>!x.parent_id).map(x=>`
+  <div class="comment">
+   <p>${esc(x.content)}</p><small class="muted">${x.user_id===user.id?"anda":"anggota komunitas"}</small>
+   <button class="secondary" onclick="replyComment('${id}','${x.id}')">balas</button>
+   ${comments.filter(y=>y.parent_id===x.id).map(y=>`<div class="comment reply"><p>${esc(y.content)}</p><small class="muted">${y.user_id===user.id?"anda":"anggota komunitas"}</small></div>`).join("")}
+  </div>`).join("")||'<p class="muted">belum ada komentar.</p>';
+ openModal(p.title,`
+  <p class="muted">${esc(p.category)} · ${p.is_public?"publik":"pribadi"}</p>
+  <p>${esc(p.description)}</p><pre>${esc(p.content)}</pre>
+  <button class="primary" onclick="copyPrompt('${id}')">salin prompt</button>
+  ${p.is_public&&p.user_id!==user.id?`<button class="danger" onclick="reportPrompt('${id}')">laporkan</button>`:""}
+  <hr style="border-color:var(--line);margin:20px 0">
+  <h2>⭐ ulasan</h2>${reviewHtml}
+  ${p.is_public&&p.user_id!==user.id?`
+   <label>rating</label><select id="reviewRating"><option value="5">5 bintang</option><option value="4">4 bintang</option><option value="3">3 bintang</option><option value="2">2 bintang</option><option value="1">1 bintang</option></select>
+   <label>komentar ulasan</label><textarea id="reviewComment"></textarea>
+   <button class="secondary" onclick="submitReview('${id}')">kirim ulasan</button>`:""}
+  <hr style="border-color:var(--line);margin:20px 0">
+  <h2>💬 komentar komunitas</h2>
+  ${commentHtml}
+  ${p.is_public?`<textarea id="newComment" placeholder="tulis komentar..."></textarea><button class="primary" onclick="addComment('${id}')">kirim komentar</button>`:""}
+ `);
+}
+async function copyPrompt(id){
+ const p=prompts.find(x=>x.id===id);if(!p)return;
+ try{await navigator.clipboard.writeText(p.content);alert("prompt berhasil disalin")}
+ catch(e){alert("salin teks secara manual dari kotak prompt")}
+}
+
+async function submitReview(id){
+  if(!user){
+    alert("silakan login terlebih dahulu!");
+    return;
+  }
+
+  const payload = {
+    user_id: user.id,
+    prompt_id: id,
+        rating: Number($("reviewRating").value),
+    comment: $("reviewComment").value.trim()
+  };
+
+  if(!payload.comment){
+    alert("isi komentar ulasan terlebih dahulu!");
+    return;
+  }
+
+  const {error} = await db
+    .from("reviews")
+    .upsert(payload, {
+      onConflict: "user_id,prompt_id"
+    });
+
+  if(error){
+    alert("gagal mengirim ulasan: " + error.message);
+    return;
+  }
+
+  alert("ulasan berhasil dikirim!");
+  location.reload();
+}
+
+async function generate() {
+  const goal = $("genGoal").value.trim();
+  const role = $("genRole").value.trim();
+  const style = $("genStyle").value;
+  const context = $("genContext").value.trim();
+  const outputDiv = $("generated");
+
+  if (!goal) {
+    return alert("Isi tujuan prompt dulu, BOS!");
+  }
+
+  outputDiv.innerHTML = '<div class="muted" style="padding:15px; border:1px solid var(--line); border-radius:10px; text-align:center;">⏳ Claude sedang meracik prompt lo...</div>';
+
+  const promptToSend = "Tujuan: " + goal + "\nPeran AI: " + role + "\nGaya Jawaban: " + style + "\nKonteks Tambahan: " + context;
+
+  try {
+    const response = await fetch('/api/generate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ prompt: promptToSend })
+    });
+
+    const contentType = response.headers.get("content-type");
+    if (!contentType || !contentType.includes("application/json")) {
+      throw new Error("API Backend gak ketemu atau error. Pastikan folder /api/generate.js udah di-deploy!");
+    }
+
+    const data = await response.json();
+
+    if (response.ok) {
+      outputDiv.innerHTML = '<pre>' + esc(data.result) + '</pre><button class="primary" onclick="copyGenerated()" style="margin-top:10px">Salin Prompt</button>';
+    } else {
+      outputDiv.innerHTML = '<div class="danger" style="padding:15px; border-radius:10px;">Error: ' + (data.error || 'Gagal konek ke AI') + '</div>';
+    }
+  } catch (error) {
+    outputDiv.innerHTML = '<div class="danger" style="padding:15px; border-radius:10px;">Sistem Error: ' + error.message + '</div>';
+  }
+}
+
+function copyGenerated() {
+  const text = $("generated").querySelector("pre").innerText;
+  navigator.clipboard.writeText(text).then(function() {
+    alert("Prompt berhasil disalin ke clipboard!");
+  }).catch(function() {
+    alert("Gagal menyalin, salin manual aja bro.");
+  });
+}
+
+boot();
+</script>
+</body>
+</html>
